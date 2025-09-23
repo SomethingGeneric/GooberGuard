@@ -11,9 +11,18 @@ import java.util.ArrayList;
 public class DomainAdapter extends RecyclerView.Adapter<DomainAdapter.DomainViewHolder> {
 
     private ArrayList<String> domains;
+    private OnDomainClickListener clickListener;
+
+    public interface OnDomainClickListener {
+        void onDomainClick(String domain, int position);
+    }
 
     public DomainAdapter(ArrayList<String> domains) {
         this.domains = domains;
+    }
+
+    public void setOnDomainClickListener(OnDomainClickListener listener) {
+        this.clickListener = listener;
     }
 
     @NonNull
@@ -25,7 +34,15 @@ public class DomainAdapter extends RecyclerView.Adapter<DomainAdapter.DomainView
 
     @Override
     public void onBindViewHolder(@NonNull DomainViewHolder holder, int position) {
-        holder.domainTextView.setText(domains.get(position));
+        String domain = domains.get(position);
+        holder.domainTextView.setText(domain);
+        
+        // Add click listener for domain removal
+        holder.itemView.setOnClickListener(v -> {
+            if (clickListener != null) {
+                clickListener.onDomainClick(domain, position);
+            }
+        });
     }
 
     @Override
