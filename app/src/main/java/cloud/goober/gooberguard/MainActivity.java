@@ -50,6 +50,27 @@ public class MainActivity extends AppCompatActivity {
         domainRecyclerView.setLayoutManager(new LinearLayoutManager(this));
         domainRecyclerView.setAdapter(domainAdapter);
 
+        // Handle domain clicks for removal
+        domainAdapter.setOnDomainClickListener(new DomainAdapter.OnDomainClickListener() {
+            @Override
+            public void onDomainClick(String domain, int position) {
+                // Show confirmation dialog for domain removal
+                new android.app.AlertDialog.Builder(MainActivity.this)
+                    .setTitle("Remove Domain")
+                    .setMessage("Remove " + domain + " from blocked list?")
+                    .setPositiveButton("Remove", (dialog, which) -> {
+                        domainManager.removeBlockedDomain(domain);
+                        blockedDomains.clear();
+                        blockedDomains.addAll(domainManager.getBlockedDomains());
+                        domainAdapter.notifyDataSetChanged();
+                        updateUI();
+                        Toast.makeText(MainActivity.this, "Removed: " + domain, Toast.LENGTH_SHORT).show();
+                    })
+                    .setNegativeButton("Cancel", null)
+                    .show();
+            }
+        });
+
         // Set up button listeners
         addDomainButton.setOnClickListener(new View.OnClickListener() {
             @SuppressLint("NotifyDataSetChanged")
@@ -57,14 +78,25 @@ public class MainActivity extends AppCompatActivity {
             public void onClick(View v) {
                 String domain = domainInput.getText().toString().trim();
                 if (!domain.isEmpty()) {
-                    domainManager.addBlockedDomain(domain);
-                    blockedDomains.clear();
-                    blockedDomains.addAll(domainManager.getBlockedDomains());
-                    domainAdapter.notifyDataSetChanged();
-                    updateUI();
-                    domainInput.setText("");
-                    
-                    Toast.makeText(MainActivity.this, "Added: " + domain, Toast.LENGTH_SHORT).show();
+                    // Basic domain validation
+                    if (isValidDomain(domain)) {
+                        if (!domainManager.isDomainBlocked(domain)) {
+                            domainManager.addBlockedDomain(domain);
+                            blockedDomains.clear();
+                            blockedDomains.addAll(domainManager.getBlockedDomains());
+                            domainAdapter.notifyDataSetChanged();
+                            updateUI();
+                            domainInput.setText("");
+                            
+                            Toast.makeText(MainActivity.this, "Added: " + domain, Toast.LENGTH_SHORT).show();
+                        } else {
+                            Toast.makeText(MainActivity.this, "Domain already blocked", Toast.LENGTH_SHORT).show();
+                        }
+                    } else {
+                        Toast.makeText(MainActivity.this, "Please enter a valid domain (e.g., example.com)", Toast.LENGTH_LONG).show();
+                    }
+                } else {
+                    Toast.makeText(MainActivity.this, "Please enter a domain", Toast.LENGTH_SHORT).show();
                 }
             }
         });
@@ -139,5 +171,19 @@ public class MainActivity extends AppCompatActivity {
                 Toast.makeText(this, "VPN permission denied", Toast.LENGTH_SHORT).show();
             }
         }
+    }
+    
+    private boolean isValidDomain(String domain) {
+        // Basic domain validation
+        if (domain == null || domain.isEmpty()) {
+            return false;
+        }
+        
+        // Remove protocol if present
+        domain = domain.replaceAll("^https?://", "");
+        domain = domain.replaceAll("^www\\.", "");
+        
+        // Check for basic domain pattern
+        return domain.matches("^[a-zA-Z0-9]([a-zA-Z0-9\\-]{0,61}[a-zA-Z0-9])?(\\.[a-zA-Z0-9]([a-zA-Z0-9\\-]{0,61}[a-zA-Z0-9])?)*$");
     }
 }

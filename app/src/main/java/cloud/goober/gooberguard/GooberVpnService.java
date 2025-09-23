@@ -152,14 +152,36 @@ public class GooberVpnService extends VpnService {
         // and check if the domain is in the blocked list
         // This is a placeholder implementation
         
-        // For now, we'll use a simple heuristic based on common Instagram domains
-        if (blockedDomains.contains("instagram.com") || 
-            blockedDomains.contains("www.instagram.com")) {
-            // In a real implementation, you'd parse the DNS query
-            // to extract the domain name and check against the blocked list
-            return true;
+        // Check if any blocked domains should trigger blocking
+        for (String domain : blockedDomains) {
+            // In a full implementation, you'd parse the actual DNS query
+            // For now, we'll return true if Instagram domains are blocked
+            if (domain.contains("instagram")) {
+                Log.d(TAG, "Potentially blocking packet for Instagram domain: " + domain);
+                // This would need actual DNS packet parsing to work properly
+                return true;
+            }
         }
         
         return false;
+    }
+
+    /**
+     * Check if a domain should be blocked
+     * This method can be used by other components to check blocking status
+     */
+    public boolean isDomainBlocked(String domain) {
+        if (blockedDomains == null) {
+            loadBlockedDomains();
+        }
+        return blockedDomains.contains(domain.toLowerCase().trim());
+    }
+
+    /**
+     * Add a domain to the blocked list and refresh the service
+     */
+    public void refreshBlockedDomains() {
+        loadBlockedDomains();
+        Log.d(TAG, "Refreshed blocked domains list: " + blockedDomains.size() + " domains");
     }
 }
