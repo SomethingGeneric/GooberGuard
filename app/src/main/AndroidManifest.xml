@@ -2,8 +2,6 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:tools="http://schemas.android.com/tools">
 
-    <!-- VPN service permission -->
-    <uses-permission android:name="android.permission.BIND_VPN_SERVICE" />
     <!-- Internet permission for DNS queries -->
     <uses-permission android:name="android.permission.INTERNET" />
 
@@ -30,7 +28,6 @@
         <!-- VPN Service -->
         <service
             android:name=".GooberVpnService"
-            android:permission="android.permission.BIND_VPN_SERVICE"
             android:exported="false">
             <intent-filter>
                 <action android:name="android.net.VpnService" />
