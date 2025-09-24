@@ -23,11 +23,17 @@ public class DomainManager {
     }
     
     private void addDefaultBlockedDomains() {
-        // Add Instagram and common social media domains as defaults
+        // Add Instagram and Facebook domains as defaults
         addBlockedDomain("instagram.com");
         addBlockedDomain("www.instagram.com");
         addBlockedDomain("i.instagram.com");
         addBlockedDomain("api.instagram.com");
+        
+        // Add Facebook domains
+        addBlockedDomain("facebook.com");
+        addBlockedDomain("www.facebook.com");
+        addBlockedDomain("m.facebook.com");
+        addBlockedDomain("api.facebook.com");
     }
     
     public ArrayList<String> getBlockedDomains() {
