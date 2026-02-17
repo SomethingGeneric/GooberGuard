@@ -34,7 +34,6 @@ public class DomainManagerTest {
         when(mockContext.getSharedPreferences(anyString(), anyInt())).thenReturn(mockPrefs);
         when(mockPrefs.edit()).thenReturn(mockEditor);
         when(mockEditor.putStringSet(anyString(), any(Set.class))).thenReturn(mockEditor);
-        when(mockEditor.remove(anyString())).thenReturn(mockEditor);
     }
 
     @Test
@@ -66,8 +65,13 @@ public class DomainManagerTest {
 
     @Test
     public void testAddBlockedDomain() {
+        // Create a set that will be modified during the test
         Set<String> existingDomains = new HashSet<>();
-        when(mockPrefs.getStringSet(eq("domains"), any(HashSet.class))).thenReturn(existingDomains);
+        existingDomains.add("existing.com"); // Add a domain so defaults won't be added
+        
+        // Return a new copy each time to avoid reference issues
+        when(mockPrefs.getStringSet(eq("domains"), any(HashSet.class)))
+            .thenAnswer(invocation -> new HashSet<>(existingDomains));
         
         DomainManager domainManager = new DomainManager(mockContext);
         domainManager.addBlockedDomain("test.com");

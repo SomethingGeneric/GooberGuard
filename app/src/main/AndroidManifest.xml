@@ -4,6 +4,9 @@
 
     <!-- Internet permission for DNS queries -->
     <uses-permission android:name="android.permission.INTERNET" />
+    
+    <!-- VPN permission required for VpnService -->
+    <uses-permission android:name="android.permission.BIND_VPN_SERVICE" />
 
     <application
         android:allowBackup="true"

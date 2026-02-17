@@ -110,6 +110,7 @@ public class GooberVpnService extends VpnService {
         FileOutputStream out = new FileOutputStream(vpnInterface.getFileDescriptor());
         
         ByteBuffer packet = ByteBuffer.allocate(1500);
+        int blockedPacketsCount = 0;
         
         while (isRunning) {
             try {
@@ -118,16 +119,28 @@ public class GooberVpnService extends VpnService {
                 if (length > 0) {
                     packet.limit(length);
                     
-                    // Process the packet (simplified DNS filtering)
-                    if (shouldBlockPacket(packet)) {
-                        Log.d(TAG, "Blocking packet to filtered domain");
-                        // Drop the packet by not forwarding it
-                        continue;
+                    // Check if this is a DNS query packet
+                    if (DnsPacketParser.isDnsQuery(packet)) {
+                        String domain = DnsPacketParser.extractDomainName(packet);
+                        
+                        if (domain != null && isBlockedDomain(domain)) {
+                            Log.d(TAG, "Blocking DNS query for domain: " + domain);
+                            blockedPacketsCount++;
+                            
+                            // Create and send NXDOMAIN response
+                            ByteBuffer response = DnsPacketParser.createBlockedResponse(packet);
+                            if (response != null) {
+                                out.write(response.array(), 0, response.limit());
+                                Log.d(TAG, "Sent NXDOMAIN response for: " + domain);
+                            }
+                        } else {
+                            // Forward the packet (allow the DNS query)
+                            out.write(packet.array(), 0, length);
+                        }
+                    } else {
+                        // Not a DNS packet, forward it normally
+                        out.write(packet.array(), 0, length);
                     }
-                    
-                    // For now, we'll implement basic DNS blocking
-                    // In a full implementation, you'd parse UDP/DNS packets
-                    // and respond with NXDOMAIN for blocked domains
                     
                     packet.clear();
                 }
@@ -139,6 +152,8 @@ public class GooberVpnService extends VpnService {
             }
         }
         
+        Log.d(TAG, "Stopped packet processing. Total blocked: " + blockedPacketsCount);
+        
         try {
             in.close();
             out.close();
@@ -147,18 +162,18 @@ public class GooberVpnService extends VpnService {
         }
     }
 
-    private boolean shouldBlockPacket(ByteBuffer packet) {
-        // Simplified check - in reality you'd parse the DNS query
-        // and check if the domain is in the blocked list
-        // This is a placeholder implementation
+    /**
+     * Check if a domain should be blocked based on the blocked domains list
+     * Supports exact matching and subdomain matching
+     */
+    private boolean isBlockedDomain(String queryDomain) {
+        if (queryDomain == null || blockedDomains == null) {
+            return false;
+        }
         
-        // Check if any blocked domains should trigger blocking
-        for (String domain : blockedDomains) {
-            // In a full implementation, you'd parse the actual DNS query
-            // For now, we'll return true if Instagram domains are blocked
-            if (domain.contains("instagram")) {
-                Log.d(TAG, "Potentially blocking packet for Instagram domain: " + domain);
-                // This would need actual DNS packet parsing to work properly
+        // Check each blocked domain
+        for (String blockedDomain : blockedDomains) {
+            if (DnsPacketParser.matchesBlockedDomain(queryDomain, blockedDomain)) {
                 return true;
             }
         }
